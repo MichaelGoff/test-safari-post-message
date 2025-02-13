@@ -1,39 +1,9 @@
 <script setup>
-import { ref, watch, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
 
-const myToken = ref(null);
 const log = ref([]);
-
-async function generatePayload() {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        __typename: 'GenerateTokenResponse',
-        token: 'abc123',
-        personalAccessToken: {
-          __typename: 'PersonalAccessToken',
-          id: 'abc1234',
-          name: 'my token',
-          description: null,
-          expiration: (new Date()).toISOString(),
-          _deleted: null,
-        }
-      })
-    }, 500);
-  });
-}
-
-async function populateToken() {
-  myToken.value = await generatePayload();
-}
-populateToken();
-
-watch(() => !!myToken.value, () => {
-  emitMessage({
-    token: myToken.value.token,
-    personalAccessToken: myToken.value.personalAccessToken,
-  });
-});
+const route = useRoute();
 
 function emitMessage(message) {
   const jsonString = JSON.stringify(message, null, 2);
@@ -51,6 +21,10 @@ function emitMessage(message) {
   }
 }
 
+watch(() => route.name, () => {
+  log.value = [];
+})
+
 const logText = computed(() => {
   return log.value.join('\n');
 });
@@ -58,9 +32,14 @@ const logText = computed(() => {
 
 <template>
   <h1>Safari Post message Log</h1>
+  <nav>
+    <router-link to="/">Ref Value - Not Working</router-link>
+    <router-link to="/working">Raw Object - Working</router-link>
+  </nav>
   <code class="log">
     {{ logText }}
   </code>
+  <router-view @message="emitMessage" />
 </template>
 
 <style scoped>
@@ -80,9 +59,11 @@ header {
 
 nav {
   width: 100%;
+  min-width: 400px;
   font-size: 12px;
   text-align: center;
   margin-top: 2rem;
+  margin-bottom: 2rem;
 }
 
 nav a.router-link-exact-active {
