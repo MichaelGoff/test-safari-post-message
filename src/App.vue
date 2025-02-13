@@ -1,25 +1,26 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 
 const myToken = ref(null);
+const log = ref([]);
 
 async function generatePayload() {
-  return setTimeout(() => {
-    Promise.resolve({
-      __typename: 'GenerateTokenResponse',
-      token: 'abc123',
-      personalAccessToken: {
-        __typename: 'PersonalAccessToken',
-        id: 'abc1234',
-        name: 'my token',
-        description: null,
-        expiration: (new Date()).toISOString(),
-        _deleted: null,
-      }
-    })
-  }, 500);
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        __typename: 'GenerateTokenResponse',
+        token: 'abc123',
+        personalAccessToken: {
+          __typename: 'PersonalAccessToken',
+          id: 'abc1234',
+          name: 'my token',
+          description: null,
+          expiration: (new Date()).toISOString(),
+          _deleted: null,
+        }
+      })
+    }, 500);
+  });
 }
 
 async function populateToken() {
@@ -35,36 +36,38 @@ watch(() => !!myToken.value, () => {
 });
 
 function emitMessage(message) {
-  const jsonString = JSON.stringify(message);
+  const jsonString = JSON.stringify(message, null, 2);
 
   if (window?.webkit?.messageHandlers?.jmp) {
+    log.value.push(`Function found: ${window.webkit.messageHandlers.jmp.postMessage}`);
     window.webkit.messageHandlers.jmp.postMessage(message);
     console.info(`Mac host was found for message: ${jsonString}`);
+    log.value.push(jsonString);
   }
   else {
-    console.error(`Native host was not found for message: ${jsonString}`);
+    const err = `Native host was not found for message: ${jsonString}`;
+    console.error(err);
+    log.value.push(err);
   }
 }
+
+const logText = computed(() => {
+  return log.value.join('\n');
+});
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
-
-  <RouterView />
+  <h1>Safari Post message Log</h1>
+  <code class="log">
+    {{ logText }}
+  </code>
 </template>
 
 <style scoped>
+.log {
+  white-space: pre;
+}
+
 header {
   line-height: 1.5;
   max-height: 100vh;
